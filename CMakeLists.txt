@@ -31,3 +31,11 @@ target_link_libraries(load_from_ethdataset
   ${gflags_INCLUDE_DIR}
   ${OpenCV_LIBS}
 )
+
+add_executable(load_from_tum src/load_from_tum.cpp)
+target_link_libraries(load_from_tum
+  ${PCL_LIBRARIES}
+  ${CERES_LIBRARIES}
+  ${gflags_INCLUDE_DIR}
+  ${OpenCV_LIBS}
+)

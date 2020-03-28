@@ -8,6 +8,10 @@
 #include <pcl/filters/passthrough.h>
 #include <pcl/features/normal_3d.h>
 
+double neighbor_frame_distance_threshold = 1.5;
+double neighbor_frame_angle_threshold = DEG2RAD(30);
+double closest_point_distance_threshold = 0.5;
+
 class DepthFrame
 {
 public:
@@ -95,8 +99,8 @@ public:
 
       // std::cout << " d: " << translation_norm << " theta: " << RAD2DEG(angle) << std::endl;
 
-      // if (translation_norm < 0.5 && angle < DEG2RAD(30))
-      if (translation_norm < 1.0)
+      if (translation_norm < neighbor_frame_distance_threshold && angle < neighbor_frame_angle_threshold)
+      // if (translation_norm < 1.0)
       {
         adjacency[i] = true;
         neighbor_frames.emplace_back(frames[i]);
@@ -119,7 +123,8 @@ public:
 
     if (kdtree.nearestKSearch(target_point, K, pointIdxNKNSearch, pointNKNSquaredDistance) > 0)
     {
-      if (pointNKNSquaredDistance[0] > (0.2 * 0.2)) return false;
+      if (pointNKNSquaredDistance[0] > (closest_point_distance_threshold * closest_point_distance_threshold))
+        return false;
       closest_point = point_cloud_->points[pointIdxNKNSearch[0]];
       return true;
     }

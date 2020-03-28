@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <random>
+#include <fstream>
 
 namespace ethdata
 {

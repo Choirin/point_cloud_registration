@@ -61,7 +61,7 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>>& frames)
   ceres::Solver::Options options;
   options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
   options.minimizer_progress_to_stdout = true;
-  options.max_num_iterations = 10;
+  options.max_num_iterations = 20;
   options.num_threads = 4;
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
