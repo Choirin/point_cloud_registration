@@ -4,13 +4,13 @@
 #include <pcl/point_types.h>
 #include <pcl/conversions.h>
 #include <pcl/common/transforms.h>
-#include <pcl/filters/approximate_voxel_grid.h>
+#include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/features/normal_3d.h>
 
 double neighbor_frame_distance_threshold = 1.5;
 double neighbor_frame_angle_threshold = DEG2RAD(30);
-double closest_point_distance_threshold = 0.5;
+double closest_point_distance_threshold = 5.0;
 
 class DepthFrame
 {
@@ -58,11 +58,11 @@ public:
     // //pass.setFilterLimitsNegative (true);
     // pass.filter(*point_cloud_);
 
-    pcl::ApproximateVoxelGrid<pcl::PointXYZ> approximate_voxel_filter;
-    // approximate_voxel_filter.setLeafSize(0.05, 0.05, 0.05);
-    approximate_voxel_filter.setLeafSize(0.5, 0.5, 0.5);
-    approximate_voxel_filter.setInputCloud(point_cloud_);
-    approximate_voxel_filter.filter(*point_cloud_);
+    pcl::VoxelGrid<pcl::PointXYZ> voxel_filter;
+    // voxel_filter.setLeafSize(0.05, 0.05, 0.05);
+    voxel_filter.setLeafSize(0.5, 0.5, 0.5);
+    voxel_filter.setInputCloud(point_cloud_);
+    voxel_filter.filter(*point_cloud_);
   }
 
   void compute_normal()

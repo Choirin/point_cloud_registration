@@ -53,7 +53,7 @@ void add_noises(const std::vector<std::shared_ptr<DepthFrame>>& frames, double m
     Eigen::Vector3d t_dist(rand_trans_dist(rand_src), rand_trans_dist(rand_src), rand_trans_dist(rand_src));
     *translation += t_dist;
 
-    std::normal_distribution<double> rand_angle_dist(mu, DEG2RAD(20));
+    std::normal_distribution<double> rand_angle_dist(mu, DEG2RAD(10));
     Eigen::Quaterniond q_dist;
     q_dist = Eigen::AngleAxisd(rand_angle_dist(rand_src), Eigen::Vector3d::UnitX()) *
              Eigen::AngleAxisd(rand_angle_dist(rand_src), Eigen::Vector3d::UnitY()) *
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
   {
     if (file_path.extension() != ".png") continue;
     auto timestamp = std::stod(file_path.stem());
-    if (timestamp - last_timestamp < 0.5) continue;
+    if (timestamp - last_timestamp < 2.0) continue;
     last_timestamp = timestamp;
     std::cout << file_path.stem() << std::endl;
     auto closest_vertex =
@@ -118,6 +118,8 @@ int main(int argc, char *argv[])
   viewer->view(merged_cloud);
   pcl::io::savePCDFileASCII(FLAGS_path_to_org_pcd, *merged_cloud);
 
+  optimize_pose_graph(frames);
+  optimize_pose_graph(frames);
   optimize_pose_graph(frames);
   optimize_pose_graph(frames);
 

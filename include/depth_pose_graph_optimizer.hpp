@@ -11,12 +11,12 @@
 #include <iostream>
 #include <string>
 
-void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>>& frames)
+void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
 {
   ceres::Problem problem;
 
-  ceres::LossFunction* loss_function = NULL;
-  ceres::LocalParameterization* quaternion_local_parameterization =
+  ceres::LossFunction *loss_function = NULL;
+  ceres::LocalParameterization *quaternion_local_parameterization =
       new ceres::EigenQuaternionParameterization;
 
   for (auto frame : frames)
@@ -26,15 +26,14 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>>& frames)
     std::cout << neighbors.size() << ", " << points.size() << std::endl;
     for (auto neighbor : neighbors)
     {
+      Eigen::Matrix3d R_n_g = neighbor->pose().block<3, 3>(0, 0).transpose();
+      auto t_g_n = neighbor->pose().block<3, 1>(0, 3);
       for (auto point : points)
       {
-        // transform point
-        Eigen::Vector3d p(point.x, point.y, point.z);
-        p = neighbor->pose().block<3, 3>(0, 0).transpose() * (frame->pose().block<3, 3>(0, 0) * p + frame->pose().block<3, 1>(0, 3) - neighbor->pose().block<3, 1>(0, 3));
-        pcl::PointXYZ pt;
-        pt.x = p.data()[0];
-        pt.y = p.data()[1];
-        pt.z = p.data()[2];
+        // transform a point to the neighbor's coordinate
+        Eigen::Vector3d point_g = (frame->pose() * point.getVector4fMap().cast<double>()).head<3>();
+        Eigen::Vector3d point_n = R_n_g * (point_g - t_g_n);
+        pcl::PointXYZ pt(point_n.x(), point_n.y(), point_n.z());
 
         pcl::PointXYZ closest_point;
         if (neighbor->find_closest_point(pt, closest_point))
