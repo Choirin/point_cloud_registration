@@ -42,15 +42,23 @@ size_t get_sorted_files(std::string directory, std::vector<fs::path>& file_paths
   return file_paths.size();
 }
 
-void add_noises(const std::vector<std::shared_ptr<DepthFrame>>& frames, double mu = 0.0, double sigma = 0.5)
+void add_noises(const std::vector<std::shared_ptr<DepthFrame>>& frames, double mu = 0.0, double sigma = 0.2)
 {
   std::mt19937 rand_src(12345);
   for (auto frame : frames)
   {
-    std::normal_distribution<double> rand_dist(mu, sigma);
-    frame->mutable_translation()[0] += rand_dist(rand_src);
-    frame->mutable_translation()[1] += rand_dist(rand_src);
-    frame->mutable_translation()[2] += rand_dist(rand_src);
+    auto translation = frame->translation();
+    auto rotation = frame->rotation();
+    std::normal_distribution<double> rand_trans_dist(mu, sigma);
+    Eigen::Vector3d t_dist(rand_trans_dist(rand_src), rand_trans_dist(rand_src), rand_trans_dist(rand_src));
+    *translation += t_dist;
+
+    std::normal_distribution<double> rand_angle_dist(mu, DEG2RAD(20));
+    Eigen::Quaterniond q_dist;
+    q_dist = Eigen::AngleAxisd(rand_angle_dist(rand_src), Eigen::Vector3d::UnitX()) *
+             Eigen::AngleAxisd(rand_angle_dist(rand_src), Eigen::Vector3d::UnitY()) *
+             Eigen::AngleAxisd(rand_angle_dist(rand_src), Eigen::Vector3d::UnitZ());
+    *rotation *= q_dist;
   }
 }
 
@@ -108,7 +116,7 @@ int main(int argc, char *argv[])
   pcl::io::savePCDFileASCII(FLAGS_path_to_org_pcd, *merged_cloud);
 
   optimize_pose_graph(frames);
-  // optimize_pose_graph(frames);
+  optimize_pose_graph(frames);
 
   icp->merge(merged_cloud);
   viewer->view(merged_cloud);

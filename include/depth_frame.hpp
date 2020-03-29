@@ -25,6 +25,9 @@ public:
   }
   ~DepthFrame() {}
 
+  Eigen::Vector3d* translation() { return &translation_; }
+  Eigen::Quaterniond* rotation() { return &rotation_; }
+
   double* mutable_translation() { return translation_.data(); }
   double* mutable_rotation() { return rotation_.coeffs().data(); }
 
