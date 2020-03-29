@@ -28,7 +28,7 @@ DEFINE_double(timestamp_diff,
               0.05,
               "timestamp differences tolerance in seconds");
 
-size_t get_sorted_files(std::string directory, std::vector<fs::path>& file_paths)
+size_t get_sorted_files(const fs::path& directory, std::vector<fs::path>& file_paths)
 {
   for (const auto &entry : fs::directory_iterator(directory))
   {
@@ -69,13 +69,16 @@ int main(int argc, char *argv[])
       std::make_shared<DepthToPointCloud>(640, 480, 525.0, 525.0, 319.5, 239.5, 5000.0);
   std::shared_ptr<PointCloudViewer> viewer = std::make_shared<PointCloudViewer>();
 
-  auto ground_truth = tumdataset::GroundTruth(FLAGS_path_to_dataset + "/groundtruth.txt");
+  fs::path dataset_path = FLAGS_path_to_dataset;
+  fs::path ground_truth_path = dataset_path / "groundtruth.txt";
+  fs::path depth_dir_path = dataset_path / "depth";
+  auto ground_truth = tumdataset::GroundTruth(ground_truth_path.string());
   auto vertices = ground_truth.data();
 
   std::vector<std::shared_ptr<DepthFrame>> frames;
 
   std::vector<fs::path> file_paths;
-  get_sorted_files(FLAGS_path_to_dataset + "/depth", file_paths);
+  get_sorted_files(depth_dir_path, file_paths);
   double last_timestamp = 0;
   for (auto file_path : file_paths)
   {
