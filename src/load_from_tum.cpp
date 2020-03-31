@@ -58,7 +58,7 @@ void add_noises(const std::vector<std::shared_ptr<DepthFrame>> &frames, double m
     Eigen::Vector3d t_dist(rand_trans_dist(rand_src), rand_trans_dist(rand_src), rand_trans_dist(rand_src));
     *translation += t_dist;
 
-    std::normal_distribution<double> rand_angle_dist(mu, DEG2RAD(10));
+    std::normal_distribution<double> rand_angle_dist(mu, DEG2RAD(5));
     Eigen::Quaterniond q_dist;
     q_dist = Eigen::AngleAxisd(rand_angle_dist(rand_src), Eigen::Vector3d::UnitX()) *
              Eigen::AngleAxisd(rand_angle_dist(rand_src), Eigen::Vector3d::UnitY()) *

@@ -11,7 +11,7 @@
 #include <gflags/gflags.h>
 
 DEFINE_double(voxel_grid_filter_leaf_size,
-              1.0,
+              0.5,
               "leaf size of voxel grid filter [m]");
 DEFINE_double(neighbor_frame_distance_threshold,
               2.5,
@@ -53,6 +53,11 @@ public:
     return point_cloud_;
   }
 
+  pcl::PointCloud<pcl::Normal>::Ptr normals()
+  {
+    return normals_;
+  }
+
   void transformed_point_cloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
   {
     pcl::transformPointCloud(*point_cloud_, *cloud, pose());
@@ -90,7 +95,7 @@ public:
     normals_ = boost::make_shared<pcl::PointCloud<pcl::Normal>>();
 
     // Use all neighbors in a sphere of radius 3cm
-    ne.setRadiusSearch(0.03);
+    ne.setRadiusSearch(15);
 
     // Compute the features
     ne.compute(*normals_);

@@ -70,11 +70,20 @@ struct DepthPoseGraphNormalErrorTerm
     Eigen::Matrix<T, 3, 1> t_a_g = q_a * (point_a.template cast<T>()) + t_a;
     Eigen::Matrix<T, 3, 1> t_b_g = q_b * (point_b.template cast<T>()) + t_b;
 
+    // The error is the difference between the predicted and observed position.
     Eigen::Matrix<T, 3, 1> t_diff = t_a_g - t_b_g;
 
-    // The error is the difference between the predicted and observed position.
-    T residual = t_diff.transpose() * (q_b * (normal_b.template cast<T>()));
-    residuals_ptr[0] = residual;
+    // T residual = t_diff.transpose() * (q_b * (normal_b.template cast<T>()));
+    // residuals_ptr[0] = residual;
+
+    Eigen::Matrix<T, 3, 1> n_a_g = q_a * (normal_a.template cast<T>());
+    Eigen::Matrix<T, 3, 1> n_b_g = q_b * (normal_b.template cast<T>());
+    T angle = acos(n_a_g.dot(n_b_g) / (n_a_g.norm() * n_b_g.norm()));
+
+    residuals_ptr[0] = t_diff[0];
+    residuals_ptr[1] = t_diff[1];
+    residuals_ptr[2] = t_diff[2];
+    residuals_ptr[3] = angle;
 
     return true;
   }
@@ -86,7 +95,7 @@ struct DepthPoseGraphNormalErrorTerm
                                      const Eigen::Matrix<double, 3, 1> normal_a,
                                      const Eigen::Matrix<double, 3, 1> normal_b)
   {
-    return (new ceres::AutoDiffCostFunction<DepthPoseGraphNormalErrorTerm, 1, 3, 4, 3, 4>(
+    return (new ceres::AutoDiffCostFunction<DepthPoseGraphNormalErrorTerm, 4, 3, 4, 3, 4>(
         new DepthPoseGraphNormalErrorTerm(point_a, point_b, normal_a, normal_b)));
   }
   Eigen::Matrix<double, 3, 1> point_a;

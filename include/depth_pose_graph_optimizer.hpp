@@ -23,14 +23,17 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
   {
     auto neighbors = frame->find_neighbor_frames(frames);
     auto points = frame->point_cloud()->points;
+    auto normals = frame->normals()->points;
     std::cout << "frames: " << neighbors.size() << ", "
               << "points: " << points.size() << std::endl;
     for (auto neighbor : neighbors)
     {
       Eigen::Matrix3d R_n_g = neighbor->pose().block<3, 3>(0, 0).transpose();
       auto t_g_n = neighbor->pose().block<3, 1>(0, 3);
-      for (auto point : points)
+      for (size_t i = 0; i < points.size(); ++i)
       {
+        auto point = points[i];
+        auto normal = normals[i];
         // transform a point to the neighbor's coordinate
         Eigen::Vector3d point_g = (frame->pose() * point.getVector4fMap().cast<double>()).head<3>();
         Eigen::Vector3d point_n = R_n_g * (point_g - t_g_n);
@@ -42,9 +45,10 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
         {
           const Eigen::Matrix<double, 3, 1> point_a = point.getVector3fMap().cast<double>();
           const Eigen::Matrix<double, 3, 1> point_b = closest_point.getVector3fMap().cast<double>();
-          // ceres::CostFunction *cost_function = DepthPoseGraphErrorTerm::Create(point_a, point_b);
-          const Eigen::Matrix<double, 3, 1> normal_b = closes_point_normal.getNormalVector3fMap().cast<double>();
-          ceres::CostFunction *cost_function = DepthPoseGraphNormalErrorTerm::Create(point_a, point_b, normal_b, normal_b);
+          ceres::CostFunction *cost_function = DepthPoseGraphErrorTerm::Create(point_a, point_b);
+          // const Eigen::Matrix<double, 3, 1> normal_a = normal.getNormalVector3fMap().cast<double>();
+          // const Eigen::Matrix<double, 3, 1> normal_b = closes_point_normal.getNormalVector3fMap().cast<double>();
+          // ceres::CostFunction *cost_function = DepthPoseGraphNormalErrorTerm::Create(point_a, point_b, normal_a, normal_b);
           problem.AddResidualBlock(cost_function,
                                    loss_function,
                                    frame->mutable_translation(),
