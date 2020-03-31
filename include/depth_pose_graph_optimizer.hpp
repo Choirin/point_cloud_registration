@@ -23,7 +23,8 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
   {
     auto neighbors = frame->find_neighbor_frames(frames);
     auto points = frame->point_cloud()->points;
-    std::cout << neighbors.size() << ", " << points.size() << std::endl;
+    std::cout << "frames: " << neighbors.size() << ", "
+              << "points: " << points.size() << std::endl;
     for (auto neighbor : neighbors)
     {
       Eigen::Matrix3d R_n_g = neighbor->pose().block<3, 3>(0, 0).transpose();
@@ -58,9 +59,10 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
   }
 
   ceres::Solver::Options options;
+  // options.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
   options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
   options.minimizer_progress_to_stdout = true;
-  options.max_num_iterations = 20;
+  options.max_num_iterations = 3;
   options.num_threads = 4;
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);

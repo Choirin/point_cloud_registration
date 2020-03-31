@@ -28,12 +28,17 @@ DEFINE_double(timestamp_diff,
               0.05,
               "timestamp differences tolerance in seconds");
 
-size_t get_sorted_files(const fs::path& directory, std::vector<fs::path>& file_paths)
+size_t get_sorted_files(const fs::path &directory, std::vector<fs::path> &file_paths)
 {
   for (const auto &entry : fs::directory_iterator(directory))
   {
-    if (entry.path().extension() != ".png") continue;
+    if (entry.path().extension() != ".png")
+      continue;
     file_paths.push_back(entry.path().string());
+    // For debug purpose, load only a frame
+    // for (int i = 0; i < 20; ++i)
+    //   file_paths.push_back(entry.path().string());
+    // break;
   }
   std::sort(file_paths.begin(), file_paths.end(),
             [&](const fs::path &a, const fs::path &b) {
@@ -42,7 +47,7 @@ size_t get_sorted_files(const fs::path& directory, std::vector<fs::path>& file_p
   return file_paths.size();
 }
 
-void add_noises(const std::vector<std::shared_ptr<DepthFrame>>& frames, double mu = 0.0, double sigma = 0.2)
+void add_noises(const std::vector<std::shared_ptr<DepthFrame>> &frames, double mu = 0.0, double sigma = 0.2)
 {
   std::mt19937 rand_src(12345);
   for (auto frame : frames)
@@ -82,9 +87,11 @@ int main(int argc, char *argv[])
   double last_timestamp = 0;
   for (auto file_path : file_paths)
   {
-    if (file_path.extension() != ".png") continue;
+    if (file_path.extension() != ".png")
+      continue;
     auto timestamp = std::stod(file_path.stem());
-    if (timestamp - last_timestamp < 2.0) continue;
+    if (timestamp - last_timestamp < 2.0)
+      continue;
     last_timestamp = timestamp;
     std::cout << file_path.stem() << std::endl;
     auto closest_vertex =

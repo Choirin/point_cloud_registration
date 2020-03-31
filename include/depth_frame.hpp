@@ -8,9 +8,20 @@
 #include <pcl/filters/passthrough.h>
 #include <pcl/features/normal_3d.h>
 
-double neighbor_frame_distance_threshold = 1.5;
-double neighbor_frame_angle_threshold = DEG2RAD(30);
-double closest_point_distance_threshold = 5.0;
+#include <gflags/gflags.h>
+
+DEFINE_double(voxel_grid_filter_leaf_size,
+              1.0,
+              "leaf size of voxel grid filter [m]");
+DEFINE_double(neighbor_frame_distance_threshold,
+              2.5,
+              "distance threshold to select neighbor frames [m]");
+DEFINE_double(neighbor_frame_angle_threshold_deg,
+              30,
+              "distance threshold to select neighbor frames [deg]");
+DEFINE_double(closest_point_distance_threshold,
+              15.0,
+              "distance threshold to select closest points [m]");
 
 class DepthFrame
 {
@@ -20,8 +31,6 @@ public:
   {
     translation_ = pose.block<3, 1>(0, 3);
     rotation_ = Eigen::Quaterniond(pose.block<3, 3>(0, 0));
-    // pcl::io::savePCDFileASCII("/home/kohei/map.pcd", *point_cloud_);
-    // exit(-1);
   }
   ~DepthFrame() {}
 
@@ -59,8 +68,9 @@ public:
     // pass.filter(*point_cloud_);
 
     pcl::VoxelGrid<pcl::PointXYZ> voxel_filter;
-    // voxel_filter.setLeafSize(0.05, 0.05, 0.05);
-    voxel_filter.setLeafSize(0.5, 0.5, 0.5);
+    voxel_filter.setLeafSize(FLAGS_voxel_grid_filter_leaf_size,
+                             FLAGS_voxel_grid_filter_leaf_size,
+                             FLAGS_voxel_grid_filter_leaf_size);
     voxel_filter.setInputCloud(point_cloud_);
     voxel_filter.filter(*point_cloud_);
   }
@@ -102,7 +112,8 @@ public:
 
       // std::cout << " d: " << translation_norm << " theta: " << RAD2DEG(angle) << std::endl;
 
-      if (translation_norm < neighbor_frame_distance_threshold && angle < neighbor_frame_angle_threshold)
+      if (translation_norm < FLAGS_neighbor_frame_distance_threshold &&
+          angle < DEG2RAD(FLAGS_neighbor_frame_angle_threshold_deg))
       // if (translation_norm < 1.0)
       {
         adjacency[i] = true;
@@ -126,7 +137,8 @@ public:
 
     if (kdtree.nearestKSearch(target_point, K, pointIdxNKNSearch, pointNKNSquaredDistance) > 0)
     {
-      if (pointNKNSquaredDistance[0] > (closest_point_distance_threshold * closest_point_distance_threshold))
+      auto threshold_square = pow(FLAGS_closest_point_distance_threshold, 2);
+      if (pointNKNSquaredDistance[0] > threshold_square)
         return false;
       closest_point = point_cloud_->points[pointIdxNKNSearch[0]];
       return true;

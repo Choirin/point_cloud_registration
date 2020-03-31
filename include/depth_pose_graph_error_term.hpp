@@ -26,8 +26,8 @@ struct DepthPoseGraphErrorTerm
     Eigen::Map<const Eigen::Quaternion<T>> q_b(q_b_ptr);
 
     // Transform points to global coordinate
-    Eigen::Matrix<T, 3, 1> t_a_g = q_a * (point_a.cast<T>()) + t_a;
-    Eigen::Matrix<T, 3, 1> t_b_g = q_b * (point_b.cast<T>()) + t_b;
+    Eigen::Matrix<T, 3, 1> t_a_g = q_a * (point_a.template cast<T>()) + t_a;
+    Eigen::Matrix<T, 3, 1> t_b_g = q_b * (point_b.template cast<T>()) + t_b;
 
     // The error is the difference between the predicted and observed position.
     residuals_ptr[0] = t_a_g[0] - t_b_g[0];
