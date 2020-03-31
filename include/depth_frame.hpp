@@ -87,13 +87,13 @@ public:
     ne.setSearchMethod(tree);
 
     // Output datasets
-    cloud_normals_ = boost::make_shared<pcl::PointCloud<pcl::Normal>>();
+    normals_ = boost::make_shared<pcl::PointCloud<pcl::Normal>>();
 
     // Use all neighbors in a sphere of radius 3cm
     ne.setRadiusSearch(0.03);
 
     // Compute the features
-    ne.compute(*cloud_normals_);
+    ne.compute(*normals_);
   }
 
   std::vector<std::shared_ptr<DepthFrame>> find_neighbor_frames(const std::vector<std::shared_ptr<DepthFrame>> &frames)
@@ -124,7 +124,7 @@ public:
     return neighbor_frames;
   }
 
-  bool find_closest_point(const pcl::PointXYZ &target_point, pcl::PointXYZ &closest_point)
+  bool find_closest_point(const pcl::PointXYZ &target_point, pcl::PointXYZ &closest_point, pcl::Normal &normal)
   {
     pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
     kdtree.setInputCloud(point_cloud_);
@@ -141,6 +141,7 @@ public:
       if (pointNKNSquaredDistance[0] > threshold_square)
         return false;
       closest_point = point_cloud_->points[pointIdxNKNSearch[0]];
+      normal = normals_->points[pointIdxNKNSearch[0]];
       return true;
     }
 
@@ -149,7 +150,7 @@ public:
 
 private:
   pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud_;
-  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals_;
+  pcl::PointCloud<pcl::Normal>::Ptr normals_;
   Eigen::Vector3d translation_;
   Eigen::Quaterniond rotation_;
 

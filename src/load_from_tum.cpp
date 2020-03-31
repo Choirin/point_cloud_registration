@@ -129,6 +129,10 @@ int main(int argc, char *argv[])
   optimize_pose_graph(frames);
   optimize_pose_graph(frames);
   optimize_pose_graph(frames);
+  optimize_pose_graph(frames);
+  optimize_pose_graph(frames);
+  optimize_pose_graph(frames);
+  optimize_pose_graph(frames);
 
   icp->merge(merged_cloud);
   viewer->view(merged_cloud);

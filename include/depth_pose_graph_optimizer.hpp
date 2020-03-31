@@ -37,11 +37,14 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
         pcl::PointXYZ pt(point_n.x(), point_n.y(), point_n.z());
 
         pcl::PointXYZ closest_point;
-        if (neighbor->find_closest_point(pt, closest_point))
+        pcl::Normal closes_point_normal;
+        if (neighbor->find_closest_point(pt, closest_point, closes_point_normal))
         {
           const Eigen::Matrix<double, 3, 1> point_a = point.getVector3fMap().cast<double>();
           const Eigen::Matrix<double, 3, 1> point_b = closest_point.getVector3fMap().cast<double>();
-          ceres::CostFunction *cost_function = DepthPoseGraphErrorTerm::Create(point_a, point_b);
+          // ceres::CostFunction *cost_function = DepthPoseGraphErrorTerm::Create(point_a, point_b);
+          const Eigen::Matrix<double, 3, 1> normal_b = closes_point_normal.getNormalVector3fMap().cast<double>();
+          ceres::CostFunction *cost_function = DepthPoseGraphNormalErrorTerm::Create(point_a, point_b, normal_b, normal_b);
           problem.AddResidualBlock(cost_function,
                                    loss_function,
                                    frame->mutable_translation(),
@@ -63,7 +66,7 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
   options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
   options.minimizer_progress_to_stdout = true;
   options.max_num_iterations = 3;
-  options.num_threads = 4;
+  options.num_threads = 1;
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
   std::cout << summary.FullReport() << "\n";
