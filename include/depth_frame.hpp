@@ -94,8 +94,8 @@ public:
     // Output datasets
     normals_ = boost::make_shared<pcl::PointCloud<pcl::Normal>>();
 
-    // Use all neighbors in a sphere of radius 3cm
-    ne.setRadiusSearch(15);
+    // Use N neighbors
+    ne.setKSearch(10);
 
     // Compute the features
     ne.compute(*normals_);

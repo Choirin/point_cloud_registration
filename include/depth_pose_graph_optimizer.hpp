@@ -45,10 +45,10 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
         {
           const Eigen::Matrix<double, 3, 1> point_a = point.getVector3fMap().cast<double>();
           const Eigen::Matrix<double, 3, 1> point_b = closest_point.getVector3fMap().cast<double>();
-          ceres::CostFunction *cost_function = DepthPoseGraphErrorTerm::Create(point_a, point_b);
-          // const Eigen::Matrix<double, 3, 1> normal_a = normal.getNormalVector3fMap().cast<double>();
-          // const Eigen::Matrix<double, 3, 1> normal_b = closes_point_normal.getNormalVector3fMap().cast<double>();
-          // ceres::CostFunction *cost_function = DepthPoseGraphNormalErrorTerm::Create(point_a, point_b, normal_a, normal_b);
+          // ceres::CostFunction *cost_function = DepthPoseGraphErrorTerm::Create(point_a, point_b);
+          const Eigen::Matrix<double, 3, 1> normal_a = normal.getNormalVector3fMap().cast<double>();
+          const Eigen::Matrix<double, 3, 1> normal_b = closes_point_normal.getNormalVector3fMap().cast<double>();
+          ceres::CostFunction *cost_function = DepthPoseGraphNormalErrorTerm::Create(point_a, point_b, normal_a, normal_b);
           problem.AddResidualBlock(cost_function,
                                    loss_function,
                                    frame->mutable_translation(),
