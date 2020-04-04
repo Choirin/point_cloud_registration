@@ -19,7 +19,6 @@ public:
   double *mutable_translation() { return translation_.data(); }
   double *mutable_rotation() { return rotation_.coeffs().data(); }
 
-  // Eigen::Matrix4d &pose();
   void get_pose(Eigen::Matrix4d &pose);
 
   void transformed_point_cloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud);
@@ -37,7 +36,4 @@ private:
   pcl::PointCloud<pcl::Normal>::Ptr normals_;
   Eigen::Vector3d translation_;
   Eigen::Quaterniond rotation_;
-
-  // TODO: remove this
-  // Eigen::Matrix4d pose_;
 };

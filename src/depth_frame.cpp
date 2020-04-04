@@ -25,15 +25,6 @@ DepthFrame::DepthFrame(const pcl::PointCloud<pcl::PointXYZ>::Ptr &point_cloud, c
   rotation_ = Eigen::Quaterniond(pose.block<3, 3>(0, 0));
 }
 
-// Eigen::Matrix4d &DepthFrame::pose()
-// {
-//   pose_ = Eigen::Matrix4d::Identity();
-//   pose_.block<3, 3>(0, 0) = rotation_.toRotationMatrix();
-//   std::cout << pose_.block<3, 3>(0, 0) << std::endl;
-//   pose_.block<3, 1>(0, 3) = translation_;
-//   return pose_;
-// }
-
 void DepthFrame::get_pose(Eigen::Matrix4d &pose)
 {
   pose = Eigen::Matrix4d::Identity();
