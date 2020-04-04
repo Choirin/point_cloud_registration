@@ -2,7 +2,7 @@
 #include "depth_pose_graph_error_term.hpp"
 #include "depth_frame.hpp"
 #include "covisibility_edge.hpp"
-#include "viewer.hpp"
+#include "point_cloud_viewer.hpp"
 
 #include <Eigen/Dense>
 #include <ceres/ceres.h>
@@ -37,8 +37,11 @@ std::vector<std::shared_ptr<DepthFrame>> find_neighbor_frames(
       continue;
     std::shared_ptr<CovisibilityEdge> edge(new CovisibilityEdge(reference, target_frames[i]));
 
-    if (edge->relative_distance() < FLAGS_neighbor_frame_distance_threshold &&
-        edge->relative_angle() < DEG2RAD(FLAGS_neighbor_frame_angle_threshold_deg))
+    auto distance = edge->relative_distance();
+    auto angle = edge->relative_angle();
+
+    if (distance < FLAGS_neighbor_frame_distance_threshold &&
+        angle < DEG2RAD(FLAGS_neighbor_frame_angle_threshold_deg))
     {
       edges.emplace_back(edge);
     }
@@ -72,6 +75,8 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
 
   for (auto frame : frames)
   {
+    Eigen::Matrix4d frame_pose;
+    frame->get_pose(frame_pose);
     viewer->append_frame(frame);
     auto neighbors = find_neighbor_frames(frame, frames);
     auto points = frame->point_cloud()->points;
@@ -82,14 +87,16 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
     {
       // viewer->append_frame(frame);
       // viewer->append_frame(neighbor);
-      Eigen::Matrix3d R_n_g = neighbor->pose().block<3, 3>(0, 0).transpose();
-      Eigen::Vector3d t_g_n = neighbor->pose().block<3, 1>(0, 3);
+      Eigen::Matrix4d neighbor_pose;
+      neighbor->get_pose(neighbor_pose);
+      Eigen::Matrix3d R_n_g = neighbor_pose.block<3, 3>(0, 0).transpose();
+      Eigen::Vector3d t_g_n = neighbor_pose.block<3, 1>(0, 3);
       for (size_t i = 0; i < points.size(); ++i)
       {
         auto point = points[i];
         auto normal = normals[i];
         // transform a point to the neighbor's coordinate
-        Eigen::Vector3d point_g = (frame->pose() * point.getVector4fMap().cast<double>()).head<3>();
+        Eigen::Vector3d point_g = (frame_pose * point.getVector4fMap().cast<double>()).head<3>();
         Eigen::Vector3d point_n = R_n_g * (point_g - t_g_n);
         pcl::PointXYZ pt(point_n.x(), point_n.y(), point_n.z());
 
@@ -115,7 +122,7 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
           problem.SetParameterization(neighbor->mutable_rotation(),
                                       quaternion_local_parameterization);
 
-          auto point_b_g = (neighbor->pose() * closest_point.getVector4fMap().cast<double>()).head<3>();
+          auto point_b_g = (neighbor_pose * closest_point.getVector4fMap().cast<double>()).head<3>();
           viewer->append_line(point_g, point_b_g);
         }
       }

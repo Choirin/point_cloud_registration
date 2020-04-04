@@ -3,7 +3,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-class DepthFrame : public std::enable_shared_from_this<DepthFrame> 
+class DepthFrame
 {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -19,7 +19,8 @@ public:
   double *mutable_translation() { return translation_.data(); }
   double *mutable_rotation() { return rotation_.coeffs().data(); }
 
-  Eigen::Matrix4d pose();
+  // Eigen::Matrix4d &pose();
+  void get_pose(Eigen::Matrix4d &pose);
 
   void transformed_point_cloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud);
   void transformed_normals(const pcl::PointCloud<pcl::Normal>::Ptr &normals);
@@ -36,4 +37,7 @@ private:
   pcl::PointCloud<pcl::Normal>::Ptr normals_;
   Eigen::Vector3d translation_;
   Eigen::Quaterniond rotation_;
+
+  // TODO: remove this
+  // Eigen::Matrix4d pose_;
 };

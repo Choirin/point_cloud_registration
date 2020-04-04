@@ -1,7 +1,7 @@
 #include "depth_frame.hpp"
 #include "icp_registration.hpp"
 #include "depth_pose_graph_optimizer.hpp"
-#include "viewer.hpp"
+#include "point_cloud_viewer.hpp"
 #include "eth_dataset.hpp"
 
 #include <gflags/gflags.h>

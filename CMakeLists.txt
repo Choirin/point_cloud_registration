@@ -1,9 +1,17 @@
 cmake_minimum_required(VERSION 2.8)
 project(point_cloud_registration)
 
+IF(NOT CMAKE_BUILD_TYPE)
+  SET(CMAKE_BUILD_TYPE Release)
+ENDIF()
+
+MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
+
 set(CMAKE_CXX_STANDARD 14)
 
-set(CMAKE_CXX_FLAGS "-g3")
+set(CMAKE_CXX_FLAGS "-Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -Werror")
 
 add_compile_definitions(PUBLIC _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM=1)
 
@@ -26,26 +34,37 @@ include_directories(
 
 link_directories(${PCL_LIBRARY_DIRS})
 
-add_executable(load_from_ethdataset
-  src/load_from_ethdataset.cpp
+set(SOURCES
   src/depth_frame.cpp
   src/depth_pose_graph_optimizer.cpp
+  src/depth_to_point_cloud.cpp
+  src/feature_map_vertices.cpp
+  src/point_cloud_viewer.cpp
 )
-target_link_libraries(load_from_ethdataset
+
+add_library(${PROJECT_NAME}
+  ${SOURCES}
+)
+
+target_link_libraries(${PROJECT_NAME}
   ${PCL_LIBRARIES}
   ${CERES_LIBRARIES}
   ${gflags_INCLUDE_DIR}
   ${OpenCV_LIBS}
 )
 
+add_executable(load_from_ethdataset
+  src/load_from_ethdataset.cpp
+)
+
 add_executable(load_from_tum
   src/load_from_tum.cpp
-  src/depth_frame.cpp
-  src/depth_pose_graph_optimizer.cpp
 )
+
+target_link_libraries(load_from_ethdataset
+  ${PROJECT_NAME}
+)
+
 target_link_libraries(load_from_tum
-  ${PCL_LIBRARIES}
-  ${CERES_LIBRARIES}
-  ${gflags_INCLUDE_DIR}
-  ${OpenCV_LIBS}
+  ${PROJECT_NAME}
 )

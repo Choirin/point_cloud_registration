@@ -3,8 +3,9 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-
 #include <gflags/gflags.h>
+
+#include <cmath>
 
 class CovisibilityEdge
 {
@@ -21,15 +22,17 @@ public:
 
   double relative_distance(void)
   {
-    auto translation = target_->pose().block<3, 1>(0, 3) - reference_->pose().block<3, 1>(0, 3);
+    auto translation = *target_->translation() - *reference_->translation();
     return translation.norm();
   }
 
   double relative_angle(void)
   {
-    auto reference_rotation = reference_->pose().block<3, 3>(0, 0);
-    auto target_rotation = target_->pose().block<3, 3>(0, 0);
-    return acos(((reference_rotation * target_rotation.transpose()).trace() - 1) / 2);
+    Eigen::Matrix4d reference_pose;
+    Eigen::Matrix4d target_pose;
+    reference_->get_pose(reference_pose);
+    target_->get_pose(target_pose);
+    return acos(((reference_pose.block<3, 3>(0, 0) * target_pose.block<3, 3>(0, 0).transpose()).trace() - 1) / 2);
   }
 
 private:

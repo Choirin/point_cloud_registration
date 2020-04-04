@@ -25,22 +25,34 @@ DepthFrame::DepthFrame(const pcl::PointCloud<pcl::PointXYZ>::Ptr &point_cloud, c
   rotation_ = Eigen::Quaterniond(pose.block<3, 3>(0, 0));
 }
 
-Eigen::Matrix4d DepthFrame::pose()
+// Eigen::Matrix4d &DepthFrame::pose()
+// {
+//   pose_ = Eigen::Matrix4d::Identity();
+//   pose_.block<3, 3>(0, 0) = rotation_.toRotationMatrix();
+//   std::cout << pose_.block<3, 3>(0, 0) << std::endl;
+//   pose_.block<3, 1>(0, 3) = translation_;
+//   return pose_;
+// }
+
+void DepthFrame::get_pose(Eigen::Matrix4d &pose)
 {
-  Eigen::Matrix4d pose = Eigen::Matrix4d::Identity();
+  pose = Eigen::Matrix4d::Identity();
   pose.block<3, 3>(0, 0) = rotation_.toRotationMatrix();
   pose.block<3, 1>(0, 3) = translation_;
-  return pose;
 }
 
 void DepthFrame::transformed_point_cloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud)
 {
-  pcl::transformPointCloud(*point_cloud_, *cloud, pose());
+  Eigen::Matrix4d pose;
+  get_pose(pose);
+  pcl::transformPointCloud(*point_cloud_, *cloud, pose);
 }
 
 void DepthFrame::transformed_normals(const pcl::PointCloud<pcl::Normal>::Ptr &normals)
 {
-  Eigen::Matrix3d rotation = pose().block<3, 3>(0, 0);
+  Eigen::Matrix4d pose;
+  get_pose(pose);
+  Eigen::Matrix3d rotation = pose.block<3, 3>(0, 0);
   *normals = *normals_;
   for (pcl::Normal &normal : normals->points)
   {
