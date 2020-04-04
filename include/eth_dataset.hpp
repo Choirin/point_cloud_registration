@@ -10,6 +10,7 @@ namespace ethdata
 {
 typedef struct Vertex_
 {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Vertex_(long int index_, double timestamp_, Eigen::Matrix4d pose_)
       : index(index_), timestamp(timestamp_), pose(pose_)
   {

@@ -11,6 +11,7 @@ namespace tumdataset
 {
 typedef struct Vertex_
 {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Vertex_(double timestamp_, Eigen::Vector3d translation_, Eigen::Quaterniond rotation_)
       : timestamp(timestamp_), translation(translation_), rotation(rotation_)
   {

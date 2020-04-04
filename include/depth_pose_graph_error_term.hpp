@@ -11,6 +11,7 @@
 
 struct DepthPoseGraphErrorTerm
 {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   DepthPoseGraphErrorTerm(Eigen::Matrix<double, 3, 1> point_a, Eigen::Matrix<double, 3, 1> point_b)
       : point_a(point_a), point_b(point_b) {}
 
@@ -52,6 +53,7 @@ struct DepthPoseGraphErrorTerm
 
 struct DepthPoseGraphNormalErrorTerm
 {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   DepthPoseGraphNormalErrorTerm(Eigen::Matrix<double, 3, 1> point_a, Eigen::Matrix<double, 3, 1> point_b,
                                 Eigen::Matrix<double, 3, 1> normal_a, Eigen::Matrix<double, 3, 1> normal_b)
       : point_a(point_a), point_b(point_b), normal_a(normal_a), normal_b(normal_b) {}
@@ -74,18 +76,19 @@ struct DepthPoseGraphNormalErrorTerm
     // The error is the difference between the predicted and observed position.
     Eigen::Matrix<T, 3, 1> t_diff = t_a_g - t_b_g;
 
-    T residual = t_diff.transpose() * (q_b * (normal_b.template cast<T>()));
-    residuals_ptr[0] = residual;
+    T residual = t_diff.dot(q_b * (normal_b.template cast<T>()));
+    residuals_ptr[0] = residual * residual;
 
-    // angle betwee normals
-    // Eigen::Matrix<T, 3, 1> n_a_g = q_a * (normal_a.template cast<T>());
-    // Eigen::Matrix<T, 3, 1> n_b_g = q_b * (normal_b.template cast<T>());
-    // T angle = acos(n_a_g.dot(n_b_g) / (n_a_g.norm() * n_b_g.norm()));
-
-    // residuals_ptr[0] = t_diff[0];
-    // residuals_ptr[1] = t_diff[1];
-    // residuals_ptr[2] = t_diff[2];
-    // residuals_ptr[3] = angle;
+    // TODO: implement outlier rejection logic to lossfunction
+    // Oulier rejection should not be implemented here in order not to mess up the estimater
+    // Eigen::Matrix<T, 3, 1> normal_a_g = q_a * (normal_a.template cast<T>());
+    // Eigen::Matrix<T, 3, 1> normal_b_g = q_b * (normal_b.template cast<T>());
+    // // no need to divide by norm? (normal vector)
+    // auto angle = normal_a_g.dot(normal_b_g) / (normal_a_g.norm() * normal_b_g.norm());
+    // if (t_diff.norm() > 1.0 || acos(angle) > RAD2DEG(60))
+    // {
+    //   residuals_ptr[0] = (T)0;
+    // }
 
     return true;
   }

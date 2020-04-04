@@ -11,22 +11,17 @@
 #include <gflags/gflags.h>
 
 DEFINE_double(voxel_grid_filter_leaf_size,
-              0.5,
+              0.25,
               "leaf size of voxel grid filter [m]");
-DEFINE_double(neighbor_frame_distance_threshold,
-              2.5,
-              "distance threshold to select neighbor frames [m]");
-DEFINE_double(neighbor_frame_angle_threshold_deg,
-              30,
-              "distance threshold to select neighbor frames [deg]");
 DEFINE_double(closest_point_distance_threshold,
-              15.0,
+              0.5,
               "distance threshold to select closest points [m]");
 
-class DepthFrame
+class DepthFrame : public std::enable_shared_from_this<DepthFrame> 
 {
 public:
-  DepthFrame(const pcl::PointCloud<pcl::PointXYZ>::Ptr& point_cloud, Eigen::Matrix4d pose)
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  DepthFrame(const pcl::PointCloud<pcl::PointXYZ>::Ptr &point_cloud, const Eigen::Matrix4d &pose)
       : point_cloud_(point_cloud)
   {
     translation_ = pose.block<3, 1>(0, 3);
@@ -34,11 +29,11 @@ public:
   }
   ~DepthFrame() {}
 
-  Eigen::Vector3d* translation() { return &translation_; }
-  Eigen::Quaterniond* rotation() { return &rotation_; }
+  Eigen::Vector3d *translation() { return &translation_; }
+  Eigen::Quaterniond *rotation() { return &rotation_; }
 
-  double* mutable_translation() { return translation_.data(); }
-  double* mutable_rotation() { return rotation_.coeffs().data(); }
+  double *mutable_translation() { return translation_.data(); }
+  double *mutable_rotation() { return rotation_.coeffs().data(); }
 
   Eigen::Matrix4d pose()
   {
@@ -58,19 +53,30 @@ public:
     return normals_;
   }
 
-  void transformed_point_cloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
+  void transformed_point_cloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud)
   {
     pcl::transformPointCloud(*point_cloud_, *cloud, pose());
   }
 
+  void transformed_normals(const pcl::PointCloud<pcl::Normal>::Ptr &normals)
+  {
+    Eigen::Matrix3d rotation = pose().block<3, 3>(0, 0);
+    *normals = *normals_;
+    for (pcl::Normal &normal : normals->points)
+    {
+      Eigen::Vector3d normal_g(normal.getNormalVector3fMap().cast<double>());
+      normal_g = rotation * normal_g;
+      normal = pcl::Normal(normal_g.x(), normal_g.y(), normal_g.z());
+    }
+  }
+
   void filter()
   {
-    // pcl::PassThrough<pcl::PointXYZ> pass;
-    // pass.setInputCloud(point_cloud_);
-    // pass.setFilterFieldName("z");
-    // pass.setFilterLimits(0.2, 1.8);
-    // //pass.setFilterLimitsNegative (true);
-    // pass.filter(*point_cloud_);
+    pcl::PassThrough<pcl::PointXYZ> pass;
+    pass.setInputCloud(point_cloud_);
+    pass.setFilterFieldName("z");
+    pass.setFilterLimits(0.2, 20.0);
+    pass.filter(*point_cloud_);
 
     pcl::VoxelGrid<pcl::PointXYZ> voxel_filter;
     voxel_filter.setLeafSize(FLAGS_voxel_grid_filter_leaf_size,
@@ -80,9 +86,8 @@ public:
     voxel_filter.filter(*point_cloud_);
   }
 
-  void compute_normal()
+  void compute_normal(void)
   {
-    // Create the normal estimation class, and pass the input dataset to it
     pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
     ne.setInputCloud(point_cloud_);
 
@@ -90,43 +95,27 @@ public:
     // Its content will be filled inside the object, based on the given input dataset (as no other search surface is given).
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
     ne.setSearchMethod(tree);
-
-    // Output datasets
     normals_ = boost::make_shared<pcl::PointCloud<pcl::Normal>>();
-
-    // Use N neighbors
-    ne.setKSearch(10);
-
-    // Compute the features
+    ne.setKSearch(5);
     ne.compute(*normals_);
+
+    // This is already done by pcl
+    // reorient_normal_using_obsrevation_vector();
   }
 
-  std::vector<std::shared_ptr<DepthFrame>> find_neighbor_frames(const std::vector<std::shared_ptr<DepthFrame>> &frames)
+  void reorient_normal_using_obsrevation_vector(void)
   {
-    std::vector<bool> adjacency;
-    std::vector<std::shared_ptr<DepthFrame>> neighbor_frames;
-
-    auto size = frames.size();
-    adjacency.resize(size);
-    for (size_t i = 0; i < size; ++i)
+    for (size_t i = 0; i < point_cloud_->points.size(); ++i)
     {
-      if (this == frames[i].get())
-        continue;
-      auto translation_norm = (pose().block<3, 1>(0, 3) - frames[i]->pose().block<3, 1>(0, 3)).norm();
-      auto angle = acos(((pose().block<3, 3>(0, 0) * frames[i]->pose().block<3, 3>(0, 0).transpose()).trace() - 1) / 2);
-
-      // std::cout << " d: " << translation_norm << " theta: " << RAD2DEG(angle) << std::endl;
-
-      if (translation_norm < FLAGS_neighbor_frame_distance_threshold &&
-          angle < DEG2RAD(FLAGS_neighbor_frame_angle_threshold_deg))
-      // if (translation_norm < 1.0)
+      Eigen::Vector3d negative_observation_vector(point_cloud_->points[i].getVector3fMap().cast<double>());
+      Eigen::Vector3d normal_vector(normals_->points[i].getNormalVector3fMap().cast<double>());
+      auto dot_product = negative_observation_vector.dot(normal_vector);
+      if (dot_product > 0)
       {
-        adjacency[i] = true;
-        neighbor_frames.emplace_back(frames[i]);
+        std::cout << "reorient normal vector" << std::endl;
+        normals_->points[i].getNormalVector3fMap() = -normals_->points[i].getNormalVector3fMap();
       }
     }
-
-    return neighbor_frames;
   }
 
   bool find_closest_point(const pcl::PointXYZ &target_point, pcl::PointXYZ &closest_point, pcl::Normal &normal)
@@ -135,7 +124,7 @@ public:
     kdtree.setInputCloud(point_cloud_);
 
     // K nearest neighbor search
-    int K = 10;
+    int K = 1;
 
     std::vector<int> pointIdxNKNSearch(K);
     std::vector<float> pointNKNSquaredDistance(K);
@@ -158,5 +147,4 @@ private:
   pcl::PointCloud<pcl::Normal>::Ptr normals_;
   Eigen::Vector3d translation_;
   Eigen::Quaterniond rotation_;
-
 };

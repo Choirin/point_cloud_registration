@@ -13,6 +13,7 @@
 class ICPRegistration
 {
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   ICPRegistration(std::vector<std::shared_ptr<DepthFrame>> frames)
     : frames_(frames)
   {
@@ -66,7 +67,7 @@ private:
     // Set the euclidean distance difference epsilon (criterion 3)
     icp.setEuclideanFitnessEpsilon(1);
 
-    icp.setInputCloud(input);
+    icp.setInputSource(input);
     icp.setInputTarget(target);
 
     pcl::PointCloud<pcl::PointXYZ> Final;

@@ -17,6 +17,7 @@
 
 typedef struct Vertex_
 {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Vertex_(long int index_, double timestamp_, Eigen::Vector3d position_, Eigen::Quaterniond rotation_,
           Eigen::Vector3d velocity_, Eigen::Vector3d acc_bias_, Eigen::Vector3d gyro_bias_)
       : index(index_), timestamp(timestamp_), position(position_), rotation(rotation_), velocity(velocity_), acc_bias(acc_bias_), gyro_bias(gyro_bias_)
