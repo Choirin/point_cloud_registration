@@ -26,7 +26,10 @@ include_directories(
 
 link_directories(${PCL_LIBRARY_DIRS})
 
-add_executable(load_from_ethdataset src/load_from_ethdataset.cpp)
+add_executable(load_from_ethdataset
+  src/load_from_ethdataset.cpp
+  src/depth_frame.cpp
+)
 target_link_libraries(load_from_ethdataset
   ${PCL_LIBRARIES}
   ${CERES_LIBRARIES}
@@ -34,7 +37,10 @@ target_link_libraries(load_from_ethdataset
   ${OpenCV_LIBS}
 )
 
-add_executable(load_from_tum src/load_from_tum.cpp)
+add_executable(load_from_tum
+  src/load_from_tum.cpp
+  src/depth_frame.cpp
+)
 target_link_libraries(load_from_tum
   ${PCL_LIBRARIES}
   ${CERES_LIBRARIES}
