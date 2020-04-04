@@ -29,6 +29,7 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_executable(load_from_ethdataset
   src/load_from_ethdataset.cpp
   src/depth_frame.cpp
+  src/depth_pose_graph_optimizer.cpp
 )
 target_link_libraries(load_from_ethdataset
   ${PCL_LIBRARIES}
@@ -40,6 +41,7 @@ target_link_libraries(load_from_ethdataset
 add_executable(load_from_tum
   src/load_from_tum.cpp
   src/depth_frame.cpp
+  src/depth_pose_graph_optimizer.cpp
 )
 target_link_libraries(load_from_tum
   ${PCL_LIBRARIES}
