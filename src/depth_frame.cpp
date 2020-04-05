@@ -11,6 +11,12 @@
 
 #include <gflags/gflags.h>
 
+DEFINE_double(pass_through_filter_z_min,
+              0.2,
+              "minimum Z axis of pass through filter [m]");
+DEFINE_double(pass_through_filter_z_max,
+              20.0,
+              "maximum Z axis of pass through filter [m]");
 DEFINE_double(voxel_grid_filter_leaf_size,
               0.2,
               "leaf size of voxel grid filter [m]");
@@ -58,7 +64,7 @@ void DepthFrame::filter()
   pcl::PassThrough<pcl::PointXYZ> pass;
   pass.setInputCloud(point_cloud_);
   pass.setFilterFieldName("z");
-  pass.setFilterLimits(0.2, 20.0);
+  pass.setFilterLimits(FLAGS_pass_through_filter_z_min, FLAGS_pass_through_filter_z_max);
   pass.filter(*point_cloud_);
 
   pcl::VoxelGrid<pcl::PointXYZ> voxel_filter;
