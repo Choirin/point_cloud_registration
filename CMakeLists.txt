@@ -61,10 +61,18 @@ add_executable(load_from_tum
   src/load_from_tum.cpp
 )
 
+add_executable(load_from_vertices
+  src/load_from_vertices.cpp
+)
+
 target_link_libraries(load_from_ethdataset
   ${PROJECT_NAME}
 )
 
 target_link_libraries(load_from_tum
+  ${PROJECT_NAME}
+)
+
+target_link_libraries(load_from_vertices
   ${PROJECT_NAME}
 )
