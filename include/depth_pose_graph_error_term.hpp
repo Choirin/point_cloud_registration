@@ -12,7 +12,8 @@
 struct DepthPoseGraphErrorTerm
 {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  DepthPoseGraphErrorTerm(Eigen::Matrix<double, 3, 1> point_a, Eigen::Matrix<double, 3, 1> point_b)
+  DepthPoseGraphErrorTerm(const Eigen::Matrix<double, 3, 1> &point_a,
+                          const Eigen::Matrix<double, 3, 1> &point_b)
       : point_a(point_a), point_b(point_b) {}
 
   template <typename T>
@@ -41,8 +42,8 @@ struct DepthPoseGraphErrorTerm
 
   // Factory to hide the construction of the CostFunction object from
   // the client code.
-  static ceres::CostFunction *Create(const Eigen::Matrix<double, 3, 1> point_a,
-                                     const Eigen::Matrix<double, 3, 1> point_b)
+  static ceres::CostFunction *Create(const Eigen::Matrix<double, 3, 1> &point_a,
+                                     const Eigen::Matrix<double, 3, 1> &point_b)
   {
     return (new ceres::AutoDiffCostFunction<DepthPoseGraphErrorTerm, 3, 3, 4, 3, 4>(
         new DepthPoseGraphErrorTerm(point_a, point_b)));
@@ -54,8 +55,10 @@ struct DepthPoseGraphErrorTerm
 struct DepthPoseGraphNormalErrorTerm
 {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  DepthPoseGraphNormalErrorTerm(Eigen::Matrix<double, 3, 1> point_a, Eigen::Matrix<double, 3, 1> point_b,
-                                Eigen::Matrix<double, 3, 1> normal_a, Eigen::Matrix<double, 3, 1> normal_b)
+  DepthPoseGraphNormalErrorTerm(const Eigen::Matrix<double, 3, 1> &point_a,
+                                const Eigen::Matrix<double, 3, 1> &point_b,
+                                const Eigen::Matrix<double, 3, 1> &normal_a,
+                                const Eigen::Matrix<double, 3, 1> &normal_b)
       : point_a(point_a), point_b(point_b), normal_a(normal_a), normal_b(normal_b) {}
 
   template <typename T>
@@ -95,10 +98,10 @@ struct DepthPoseGraphNormalErrorTerm
 
   // Factory to hide the construction of the CostFunction object from
   // the client code.
-  static ceres::CostFunction *Create(const Eigen::Matrix<double, 3, 1> point_a,
-                                     const Eigen::Matrix<double, 3, 1> point_b,
-                                     const Eigen::Matrix<double, 3, 1> normal_a,
-                                     const Eigen::Matrix<double, 3, 1> normal_b)
+  static ceres::CostFunction *Create(const Eigen::Matrix<double, 3, 1> &point_a,
+                                     const Eigen::Matrix<double, 3, 1> &point_b,
+                                     const Eigen::Matrix<double, 3, 1> &normal_a,
+                                     const Eigen::Matrix<double, 3, 1> &normal_b)
   {
     return (new ceres::AutoDiffCostFunction<DepthPoseGraphNormalErrorTerm, 1, 3, 4, 3, 4>(
         new DepthPoseGraphNormalErrorTerm(point_a, point_b, normal_a, normal_b)));

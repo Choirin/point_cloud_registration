@@ -3,6 +3,7 @@
 #include "depth_pose_graph_optimizer.hpp"
 #include "depth_to_point_cloud.hpp"
 #include "tum_dataset.hpp"
+#include "point_cloud_viewer.hpp"
 
 #include <gflags/gflags.h>
 #include <opencv2/opencv.hpp>
@@ -117,10 +118,13 @@ int main(int argc, char *argv[])
   std::cout << "frames count: " << frames.size() << std::endl;
   add_noises(frames);
 
+  std::shared_ptr<PointCloudViewer> viewer = std::make_shared<PointCloudViewer>(frames);
+  viewer->spin();
   optimize_pose_graph(frames);
   optimize_pose_graph(frames);
   optimize_pose_graph(frames);
   optimize_pose_graph(frames);
+  viewer->spin();
 
   return 0;
 }

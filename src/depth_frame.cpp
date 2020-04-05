@@ -12,10 +12,10 @@
 #include <gflags/gflags.h>
 
 DEFINE_double(voxel_grid_filter_leaf_size,
-              0.25,
+              0.2,
               "leaf size of voxel grid filter [m]");
 DEFINE_double(closest_point_distance_threshold,
-              0.5,
+              0.6,
               "distance threshold to select closest points [m]");
 
 DepthFrame::DepthFrame(const pcl::PointCloud<pcl::PointXYZ>::Ptr &point_cloud, const Eigen::Matrix4d &pose)

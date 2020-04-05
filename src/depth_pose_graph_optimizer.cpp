@@ -17,10 +17,10 @@ DEFINE_bool(robustify,
             false,
             "whether to use HuberLoss for loss function");
 DEFINE_double(neighbor_frame_distance_threshold,
-              1.0,
+              2.0,
               "distance threshold to select neighbor frames [m]");
 DEFINE_double(neighbor_frame_angle_threshold_deg,
-              30,
+              360,
               "distance threshold to select neighbor frames [deg]");
 DEFINE_uint32(maximum_neighbor_frames,
               6,
@@ -77,7 +77,6 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
   {
     Eigen::Matrix4d frame_pose;
     frame->get_pose(frame_pose);
-    viewer->append_frame(frame);
     auto neighbors = find_neighbor_frames(frame, frames);
     auto points = frame->point_cloud()->points;
     auto normals = frame->normals()->points;
@@ -85,8 +84,8 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
               << "points: " << points.size() << std::endl;
     for (auto neighbor : neighbors)
     {
-      // viewer->append_frame(frame);
-      // viewer->append_frame(neighbor);
+      viewer->append_frame(frame);
+      viewer->append_frame(neighbor);
       Eigen::Matrix4d neighbor_pose;
       neighbor->get_pose(neighbor_pose);
       Eigen::Matrix3d R_n_g = neighbor_pose.block<3, 3>(0, 0).transpose();
@@ -133,6 +132,8 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
     }
   }
 
+  // viewer->clear_frames();
+  // viewer->clear_lines();
   // viewer->set_frames(frames);
   // viewer->spin();
 
@@ -146,6 +147,6 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
   ceres::Solve(options, &problem, &summary);
   std::cout << summary.FullReport() << "\n";
 
-  viewer->clear_lines();
-  viewer->spin();
+  // viewer->clear_lines();
+  // viewer->spin();
 }

@@ -25,19 +25,15 @@ public:
   {
     frames_ = frames;
   }
-
   void append_frame(const std::shared_ptr<DepthFrame> &frame)
   {
     frames_.emplace_back(frame);
   }
-
   void append_line(const Eigen::Vector3d &point_a, const Eigen::Vector3d &point_b);
+  void clear_frames(void) { frames_.clear(); }
+  void clear_lines(void) { lines_.clear(); }
 
   void spin(void);
-
-  void clear_frames(void) { frames_.clear(); }
-
-  void clear_lines(void) { lines_.clear(); }
 
 private:
   pcl::visualization::PCLVisualizer::Ptr visualizer_;
