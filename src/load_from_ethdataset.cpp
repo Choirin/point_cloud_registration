@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 
     auto frame = std::make_shared<DepthFrame>(point_cloud_loader.cloud(), vertex->pose);
     frame->filter();
-    frame->compute_normal();
+    frame->compute_normal_using_unfiltered(10);
     frames.emplace_back(frame);
   }
 

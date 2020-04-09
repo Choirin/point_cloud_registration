@@ -28,9 +28,8 @@ public:
 
   void filter();
 
-  void compute_normal(void);
+  void compute_normal(const int k_nearest_neighbor);
   void compute_normal_using_unfiltered(const int k_nearest_neighbor);
-  void reorient_normal_using_obsrevation_vector(void);
 
   bool find_closest_point(const pcl::PointXYZ &target_point, pcl::PointXYZ &closest_point, pcl::Normal &normal);
 

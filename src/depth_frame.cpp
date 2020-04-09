@@ -82,21 +82,16 @@ void DepthFrame::filter()
   voxel_filter.filter(*point_cloud_);
 }
 
-void DepthFrame::compute_normal(void)
+void DepthFrame::compute_normal(const int k_nearest_neighbor)
 {
   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
   ne.setInputCloud(point_cloud_);
 
-  // Create an empty kdtree representation, and pass it to the normal estimation object.
-  // Its content will be filled inside the object, based on the given input dataset (as no other search surface is given).
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
   ne.setSearchMethod(tree);
   normals_ = boost::make_shared<pcl::PointCloud<pcl::Normal>>();
-  ne.setKSearch(5);
+  ne.setKSearch(k_nearest_neighbor);
   ne.compute(*normals_);
-
-  // This is already done by pcl
-  // reorient_normal_using_obsrevation_vector();
 }
 
 void DepthFrame::compute_normal_using_unfiltered(const int k_nearest_neighbor)
@@ -129,21 +124,6 @@ void DepthFrame::compute_normal_using_unfiltered(const int k_nearest_neighbor)
       pcl::flipNormalTowardsViewpoint(point,
                                       0.0, 0.0, 0.0,
                                       normal.normal_x, normal.normal_y, normal.normal_z);
-    }
-  }
-}
-
-void DepthFrame::reorient_normal_using_obsrevation_vector(void)
-{
-  for (size_t i = 0; i < point_cloud_->points.size(); ++i)
-  {
-    Eigen::Vector3d negative_observation_vector(point_cloud_->points[i].getVector3fMap().cast<double>());
-    Eigen::Vector3d normal_vector(normals_->points[i].getNormalVector3fMap().cast<double>());
-    auto dot_product = negative_observation_vector.dot(normal_vector);
-    if (dot_product > 0)
-    {
-      std::cout << "reorient normal vector" << std::endl;
-      normals_->points[i].getNormalVector3fMap() = -normals_->points[i].getNormalVector3fMap();
     }
   }
 }

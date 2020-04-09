@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 
       std::shared_ptr<DepthFrame> frame = std::make_shared<DepthFrame>(cloud, pose);
       frame->filter();
-      frame->compute_normal();
+      frame->compute_normal_using_unfiltered(10);
       frames.emplace_back(frame);
     }
   }
