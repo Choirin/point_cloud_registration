@@ -25,14 +25,14 @@ DEFINE_double(closest_point_distance_threshold,
               "distance threshold to select closest points [m]");
 
 DepthFrame::DepthFrame(const double &timestamp, const pcl::PointCloud<pcl::PointXYZ>::Ptr &point_cloud, const Eigen::Matrix4d &pose)
-    : timestamp_(timestamp), point_cloud_(point_cloud)
+    : timestamp_(timestamp), unfiltered_cloud_(point_cloud), point_cloud_(point_cloud)
 {
   translation_ = pose.block<3, 1>(0, 3);
   rotation_ = Eigen::Quaterniond(pose.block<3, 3>(0, 0));
 }
 
 DepthFrame::DepthFrame(const pcl::PointCloud<pcl::PointXYZ>::Ptr &point_cloud, const Eigen::Matrix4d &pose)
-    : point_cloud_(point_cloud)
+    : unfiltered_cloud_(point_cloud), point_cloud_(point_cloud)
 {
   translation_ = pose.block<3, 1>(0, 3);
   rotation_ = Eigen::Quaterniond(pose.block<3, 3>(0, 0));
@@ -69,7 +69,7 @@ void DepthFrame::transformed_normals(const pcl::PointCloud<pcl::Normal>::Ptr &no
 void DepthFrame::filter()
 {
   pcl::PassThrough<pcl::PointXYZ> pass;
-  pass.setInputCloud(point_cloud_);
+  pass.setInputCloud(unfiltered_cloud_);
   pass.setFilterFieldName("z");
   pass.setFilterLimits(FLAGS_pass_through_filter_z_min, FLAGS_pass_through_filter_z_max);
   pass.filter(*point_cloud_);
@@ -97,6 +97,40 @@ void DepthFrame::compute_normal(void)
 
   // This is already done by pcl
   // reorient_normal_using_obsrevation_vector();
+}
+
+void DepthFrame::compute_normal_using_unfiltered(const int k_nearest_neighbor)
+{
+  pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
+  kdtree.setInputCloud(unfiltered_cloud_);
+  int K = k_nearest_neighbor;
+  std::vector<int> knn_searched_indices(K);
+  std::vector<float> knn_searched_distances(K);
+
+  auto size = point_cloud_->points.size();
+  normals_ = boost::make_shared<pcl::PointCloud<pcl::Normal>>();
+  normals_->width = size;
+  normals_->height = 1;
+  normals_->points.clear();
+  normals_->points.resize(size);
+  for (size_t i = 0; i < size; ++i)
+  {
+    const auto &point = point_cloud_->points[i];
+    auto &normal = normals_->points[i];
+    if (kdtree.nearestKSearch(point, K, knn_searched_indices, knn_searched_distances) == K)
+    {
+      Eigen::Vector4f plane_parameters;
+      float curvature;
+      pcl::computePointNormal(*unfiltered_cloud_, knn_searched_indices, plane_parameters, curvature);
+      normal.normal_x = plane_parameters[0];
+      normal.normal_y = plane_parameters[1];
+      normal.normal_z = plane_parameters[2];
+      normal.curvature = curvature;
+      pcl::flipNormalTowardsViewpoint(point,
+                                      0.0, 0.0, 0.0,
+                                      normal.normal_x, normal.normal_y, normal.normal_z);
+    }
+  }
 }
 
 void DepthFrame::reorient_normal_using_obsrevation_vector(void)

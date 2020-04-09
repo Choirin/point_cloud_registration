@@ -43,10 +43,10 @@ void PointCloudViewer::add_point_cloud(const std::shared_ptr<DepthFrame> &frame)
   visualizer_->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, id);
   set_unique_color_(id);
 
-  // pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>());
-  // frame->transformed_normals(normals);
-  // // normals = frame->normals(); // overwrite with original
-  // add_normals(cloud, normals);
+  pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>());
+  frame->transformed_normals(normals);
+  // normals = frame->normals(); // overwrite with original
+  add_normals(cloud, normals);
 }
 
 void PointCloudViewer::add_normals(const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, const pcl::PointCloud<pcl::Normal>::Ptr &normals)
