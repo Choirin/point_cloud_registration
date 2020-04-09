@@ -24,6 +24,13 @@ DEFINE_double(closest_point_distance_threshold,
               0.6,
               "distance threshold to select closest points [m]");
 
+DepthFrame::DepthFrame(const double &timestamp, const pcl::PointCloud<pcl::PointXYZ>::Ptr &point_cloud, const Eigen::Matrix4d &pose)
+    : timestamp_(timestamp), point_cloud_(point_cloud)
+{
+  translation_ = pose.block<3, 1>(0, 3);
+  rotation_ = Eigen::Quaterniond(pose.block<3, 3>(0, 0));
+}
+
 DepthFrame::DepthFrame(const pcl::PointCloud<pcl::PointXYZ>::Ptr &point_cloud, const Eigen::Matrix4d &pose)
     : point_cloud_(point_cloud)
 {
@@ -123,6 +130,7 @@ bool DepthFrame::find_closest_point(const pcl::PointXYZ &target_point, pcl::Poin
     auto threshold_square = pow(FLAGS_closest_point_distance_threshold, 2);
     if (pointNKNSquaredDistance[0] > threshold_square)
       return false;
+    // TODO: Check normal difference
     closest_point = point_cloud_->points[pointIdxNKNSearch[0]];
     normal = normals_->points[pointIdxNKNSearch[0]];
     return true;

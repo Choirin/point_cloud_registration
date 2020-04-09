@@ -7,9 +7,11 @@ class DepthFrame
 {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  DepthFrame(const double &timestamp, const pcl::PointCloud<pcl::PointXYZ>::Ptr &point_cloud, const Eigen::Matrix4d &pose);
   DepthFrame(const pcl::PointCloud<pcl::PointXYZ>::Ptr &point_cloud, const Eigen::Matrix4d &pose);
   ~DepthFrame() {}
 
+  double timestamp() { return timestamp_; }
   pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud() { return point_cloud_;}
   pcl::PointCloud<pcl::Normal>::Ptr normals() { return normals_; }
 
@@ -32,6 +34,7 @@ public:
   bool find_closest_point(const pcl::PointXYZ &target_point, pcl::PointXYZ &closest_point, pcl::Normal &normal);
 
 private:
+  double timestamp_;
   pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud_;
   pcl::PointCloud<pcl::Normal>::Ptr normals_;
   Eigen::Vector3d translation_;

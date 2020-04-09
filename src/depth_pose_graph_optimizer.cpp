@@ -1,5 +1,6 @@
 #include "depth_pose_graph_optimizer.hpp"
 #include "depth_pose_graph_error_term.hpp"
+#include "relative_pose_error_term.hpp"
 #include "depth_frame.hpp"
 #include "covisibility_edge.hpp"
 #include "point_cloud_viewer.hpp"
@@ -63,13 +64,10 @@ std::vector<std::shared_ptr<DepthFrame>> find_neighbor_frames(
   return neighbor_frames;
 }
 
-void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
+void add_closest_point_residuals(ceres::Problem &problem, const std::vector<std::shared_ptr<DepthFrame>> &frames,
+                                 ceres::LocalParameterization *quaternion_local_parameterization)
 {
-  ceres::Problem problem;
-
   ceres::LossFunction *loss_function = FLAGS_robustify ? new ceres::HuberLoss(1.0) : NULL;
-  ceres::LocalParameterization *quaternion_local_parameterization =
-      new ceres::EigenQuaternionParameterization;
 
   std::shared_ptr<PointCloudViewer> viewer = std::make_shared<PointCloudViewer>();
 
@@ -127,15 +125,57 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
       }
       // viewer->clear_lines();
       // viewer->spin();
-      // viewer->clear_frames();
-      // viewer->clear_lines();
+      viewer->clear_frames();
+      viewer->clear_lines();
+    }
+  }
+}
+
+void add_relative_pose_residuals(ceres::Problem &problem, const std::vector<std::shared_ptr<DepthFrame>> &frames,
+                                 ceres::LocalParameterization *quaternion_local_parameterization)
+{
+  ceres::LossFunction *loss_function = NULL;
+
+  // Add relative pose edges
+  int pose_edge_count = 0;
+  for (size_t i = 0; i < frames.size() - 1; ++i)
+  {
+    const auto &frame_a = frames[i];
+    const auto &frame_b = frames[i + 1];
+    if (abs(frame_a->timestamp() - frame_b->timestamp()) < 20.0)
+    {
+      ceres::CostFunction *cost_function =
+          RelativePoseErrorTerm::Create(*frame_a->translation(), *frame_a->rotation(),
+                                        *frame_b->translation(), *frame_b->rotation());
+      problem.AddResidualBlock(cost_function,
+                               loss_function,
+                               frame_a->mutable_translation(),
+                               frame_a->mutable_rotation(),
+                               frame_b->mutable_translation(),
+                               frame_b->mutable_rotation());
+
+      problem.SetParameterization(frame_a->mutable_rotation(),
+                                  quaternion_local_parameterization);
+      problem.SetParameterization(frame_b->mutable_rotation(),
+                                  quaternion_local_parameterization);
+
+      pose_edge_count++;
     }
   }
 
-  // viewer->clear_frames();
-  // viewer->clear_lines();
-  // viewer->set_frames(frames);
-  // viewer->spin();
+  std::cout << "relative pose edges: " << pose_edge_count << std::endl;
+}
+
+
+void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
+{
+  ceres::Problem problem;
+  ceres::LocalParameterization *quaternion_local_parameterization =
+      new ceres::EigenQuaternionParameterization;
+
+  add_closest_point_residuals(problem, frames, quaternion_local_parameterization);
+
+  add_relative_pose_residuals(problem, frames, quaternion_local_parameterization);
 
   ceres::Solver::Options options;
   // options.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
@@ -146,7 +186,4 @@ void optimize_pose_graph(std::vector<std::shared_ptr<DepthFrame>> &frames)
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
   std::cout << summary.FullReport() << "\n";
-
-  // viewer->clear_lines();
-  // viewer->spin();
 }
