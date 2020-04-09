@@ -95,6 +95,7 @@ void add_noises(const std::vector<std::shared_ptr<DepthFrame>> &frames, double m
 
 int main(int argc, char *argv[])
 {
+  std::shared_ptr<PointCloudViewer> viewer = std::make_shared<PointCloudViewer>();
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   std::shared_ptr<DepthToPointCloud> depth_to_cloud =
       std::make_shared<DepthToPointCloud>(224, 172,
@@ -140,20 +141,21 @@ int main(int argc, char *argv[])
       std::shared_ptr<DepthFrame> frame =
           std::make_shared<DepthFrame>(closest_vertex->timestamp, cloud, pose);
       frame->filter();
-      frame->compute_normal();
+      frame->compute_normal_using_unfiltered(10);
       if (frame->point_cloud()->points.size() < 50)
       {
         std::cout << frame->point_cloud()->points.size() << std::endl;
         continue;
       }
       frames.emplace_back(frame);
+      viewer->append_frame(frame);
+      viewer->spin();
     }
   }
 
   std::cout << "frames count: " << frames.size() << std::endl;
   // add_noises(frames);
 
-  std::shared_ptr<PointCloudViewer> viewer = std::make_shared<PointCloudViewer>(frames);
   viewer->spin();
   optimize_pose_graph(frames);
   viewer->spin();
