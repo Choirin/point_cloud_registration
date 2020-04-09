@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
       }
       frames.emplace_back(frame);
       viewer->append_frame(frame);
-      viewer->spin();
+      // viewer->spin();
     }
   }
 
