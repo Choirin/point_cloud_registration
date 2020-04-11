@@ -32,6 +32,8 @@ public:
   void compute_normal_using_unfiltered(const int k_nearest_neighbor);
 
   bool find_closest_point(const pcl::PointXYZ &target_point, pcl::PointXYZ &closest_point, pcl::Normal &normal);
+  bool find_closest_point(const pcl::PointXYZ &target_point, const pcl::Normal &target_normal,
+                          pcl::PointXYZ &closest_point, pcl::Normal &normal);
 
 private:
   double timestamp_;

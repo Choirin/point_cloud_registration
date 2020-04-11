@@ -40,7 +40,7 @@ struct RelativePoseErrorTerm
         (q_a.toRotationMatrix() * q_b.toRotationMatrix().transpose()) * (relative_rotation.template cast<T>()).transpose();
     Eigen::Matrix<T, 3, 1> angle_axes = rot_diff.eulerAngles(0, 1, 2);
 
-    T coeff = (T)0.5;
+    T coeff = (T)0.01;
     t_diff *= coeff;
     angle_axes *= coeff;
 

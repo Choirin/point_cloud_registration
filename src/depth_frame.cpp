@@ -74,6 +74,12 @@ void DepthFrame::filter()
   pass.setFilterLimits(FLAGS_pass_through_filter_z_min, FLAGS_pass_through_filter_z_max);
   pass.filter(*point_cloud_);
 
+  // pcl::PassThrough<pcl::PointXYZ> pass_y;
+  // pass_y.setInputCloud(point_cloud_);
+  // pass_y.setFilterFieldName("y");
+  // pass_y.setFilterLimits(0.0, 10.0);
+  // pass_y.filter(*point_cloud_);
+
   pcl::VoxelGrid<pcl::PointXYZ> voxel_filter;
   voxel_filter.setLeafSize(FLAGS_voxel_grid_filter_leaf_size,
                            FLAGS_voxel_grid_filter_leaf_size,
@@ -133,22 +139,40 @@ bool DepthFrame::find_closest_point(const pcl::PointXYZ &target_point, pcl::Poin
   pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
   kdtree.setInputCloud(point_cloud_);
 
-  // K nearest neighbor search
   int K = 1;
+  std::vector<int> knn_searched_indices(K);
+  std::vector<float> knn_searched_distances(K);
 
-  std::vector<int> pointIdxNKNSearch(K);
-  std::vector<float> pointNKNSquaredDistance(K);
-
-  if (kdtree.nearestKSearch(target_point, K, pointIdxNKNSearch, pointNKNSquaredDistance) > 0)
+  auto threshold_square = pow(FLAGS_closest_point_distance_threshold, 2);
+  auto size = kdtree.nearestKSearch(target_point, K, knn_searched_indices, knn_searched_distances);
+  if (size > 0 && knn_searched_distances[0] < threshold_square)
   {
-    auto threshold_square = pow(FLAGS_closest_point_distance_threshold, 2);
-    if (pointNKNSquaredDistance[0] > threshold_square)
-      return false;
-    // TODO: Check normal difference
-    closest_point = point_cloud_->points[pointIdxNKNSearch[0]];
-    normal = normals_->points[pointIdxNKNSearch[0]];
+    closest_point = point_cloud_->points[knn_searched_indices[0]];
+    normal = normals_->points[knn_searched_indices[0]];
     return true;
   }
+  return false;
+}
 
+bool DepthFrame::find_closest_point(const pcl::PointXYZ &target_point, const pcl::Normal &target_normal,
+                                    pcl::PointXYZ &closest_point, pcl::Normal &normal)
+{
+  pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
+  kdtree.setInputCloud(point_cloud_);
+
+  int K = 10;
+  std::vector<int> knn_searched_indices(K);
+  std::vector<float> knn_searched_distances(K);
+
+  auto threshold_square = pow(FLAGS_closest_point_distance_threshold, 2);
+  auto size = kdtree.nearestKSearch(target_point, K, knn_searched_indices, knn_searched_distances);
+  for (auto i = 0; i < size; ++i)
+  {
+    closest_point = point_cloud_->points[knn_searched_indices[i]];
+    normal = normals_->points[knn_searched_indices[i]];
+    auto normal_angle = acos(target_normal.getNormalVector3fMap().dot(normal.getNormalVector3fMap()));
+    if ((knn_searched_distances[i] < threshold_square) && (normal_angle < DEG2RAD(30)))
+      return true;
+  }
   return false;
 }

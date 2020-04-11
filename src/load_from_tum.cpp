@@ -121,6 +121,7 @@ int main(int argc, char *argv[])
   std::shared_ptr<PointCloudViewer> viewer = std::make_shared<PointCloudViewer>(frames);
   viewer->spin();
   optimize_pose_graph(frames);
+  viewer->spin();
   optimize_pose_graph(frames);
   optimize_pose_graph(frames);
   optimize_pose_graph(frames);

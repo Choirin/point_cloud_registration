@@ -78,8 +78,8 @@ void add_closest_point_residuals(ceres::Problem &problem, const std::vector<std:
     auto neighbors = find_neighbor_frames(frame, frames);
     auto points = frame->point_cloud()->points;
     auto normals = frame->normals()->points;
-    std::cout << "frames: " << neighbors.size() << ", "
-              << "points: " << points.size() << std::endl;
+
+    size_t number_of_edges = 0;
     for (auto neighbor : neighbors)
     {
       viewer->append_frame(frame);
@@ -88,6 +88,7 @@ void add_closest_point_residuals(ceres::Problem &problem, const std::vector<std:
       neighbor->get_pose(neighbor_pose);
       Eigen::Matrix3d R_n_g = neighbor_pose.block<3, 3>(0, 0).transpose();
       Eigen::Vector3d t_g_n = neighbor_pose.block<3, 1>(0, 3);
+      Eigen::Matrix3d R_n_f = R_n_g * frame_pose.block<3, 3>(0, 0);
       for (size_t i = 0; i < points.size(); ++i)
       {
         auto point = points[i];
@@ -96,16 +97,20 @@ void add_closest_point_residuals(ceres::Problem &problem, const std::vector<std:
         Eigen::Vector3d point_g = (frame_pose * point.getVector4fMap().cast<double>()).head<3>();
         Eigen::Vector3d point_n = R_n_g * (point_g - t_g_n);
         pcl::PointXYZ pt(point_n.x(), point_n.y(), point_n.z());
+        Eigen::Vector3d normal_vec_n = R_n_f * normal.getNormalVector3fMap().cast<double>();
+        pcl::Normal normal_n(normal_vec_n.x(), normal_vec_n.y(), normal_vec_n.z());
 
         pcl::PointXYZ closest_point;
         pcl::Normal closest_point_normal;
-        if (neighbor->find_closest_point(pt, closest_point, closest_point_normal))
+        // TODO: transform normal to neighbor's coords
+        if (neighbor->find_closest_point(pt, normal_n, closest_point, closest_point_normal))
         {
           const Eigen::Matrix<double, 3, 1> point_a = point.getVector3fMap().cast<double>();
           const Eigen::Matrix<double, 3, 1> point_b = closest_point.getVector3fMap().cast<double>();
           // ceres::CostFunction *cost_function = DepthPoseGraphErrorTerm::Create(point_a, point_b);
           const Eigen::Matrix<double, 3, 1> normal_a = normal.getNormalVector3fMap().cast<double>();
           const Eigen::Matrix<double, 3, 1> normal_b = closest_point_normal.getNormalVector3fMap().cast<double>();
+
           ceres::CostFunction *cost_function = DepthPoseGraphNormalErrorTerm::Create(point_a, point_b, normal_a, normal_b);
           problem.AddResidualBlock(cost_function,
                                    loss_function,
@@ -119,6 +124,8 @@ void add_closest_point_residuals(ceres::Problem &problem, const std::vector<std:
           problem.SetParameterization(neighbor->mutable_rotation(),
                                       quaternion_local_parameterization);
 
+          number_of_edges++;
+
           auto point_b_g = (neighbor_pose * closest_point.getVector4fMap().cast<double>()).head<3>();
           viewer->append_line(point_g, point_b_g);
         }
@@ -128,6 +135,8 @@ void add_closest_point_residuals(ceres::Problem &problem, const std::vector<std:
       viewer->clear_frames();
       viewer->clear_lines();
     }
+    std::cout << "frames: " << neighbors.size() << ", "
+              << "points: " << number_of_edges << std::endl;
   }
 }
 
