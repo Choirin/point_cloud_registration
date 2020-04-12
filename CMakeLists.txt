@@ -23,6 +23,7 @@ find_package(Eigen3 REQUIRED)
 find_package(Ceres REQUIRED)
 find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(Pangolin REQUIRED)
 
 include_directories(
   include
@@ -30,6 +31,7 @@ include_directories(
   ${CERES_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
+  ${Pangolin_INCLUDE_DIRS}
 )
 
 link_directories(${PCL_LIBRARY_DIRS})
@@ -51,6 +53,7 @@ target_link_libraries(${PROJECT_NAME}
   ${CERES_LIBRARIES}
   ${gflags_INCLUDE_DIR}
   ${OpenCV_LIBS}
+  ${Pangolin_LIBRARIES}
 )
 
 add_executable(load_from_ethdataset
@@ -61,10 +64,18 @@ add_executable(load_from_tum
   src/load_from_tum.cpp
 )
 
+add_executable(main_view
+  src/main_view.cpp
+)
+
 target_link_libraries(load_from_ethdataset
   ${PROJECT_NAME}
 )
 
 target_link_libraries(load_from_tum
+  ${PROJECT_NAME}
+)
+
+target_link_libraries(main_view
   ${PROJECT_NAME}
 )
