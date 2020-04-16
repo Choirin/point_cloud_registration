@@ -49,11 +49,11 @@ add_library(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+  ${Pangolin_LIBRARIES}
   ${PCL_LIBRARIES}
   ${CERES_LIBRARIES}
   ${gflags_INCLUDE_DIR}
   ${OpenCV_LIBS}
-  ${Pangolin_LIBRARIES}
 )
 
 add_executable(load_from_ethdataset

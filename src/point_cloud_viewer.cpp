@@ -1,8 +1,10 @@
 #include "point_cloud_viewer.hpp"
 
+#include <pangolin/gl/gl.h>
+#include <pangolin/gl/gldraw.h>
+
 void PointCloudViewer::append_line(const Eigen::Vector3d &point_a, const Eigen::Vector3d &point_b)
 {
-  auto id = unique_id();
   pcl::PointXYZ pt_a(point_a.x(), point_a.y(), point_a.z());
   pcl::PointXYZ pt_b(point_b.x(), point_b.y(), point_b.z());
   lines_.emplace_back(std::make_tuple(pt_a, pt_b));
@@ -15,33 +17,55 @@ void PointCloudViewer::spin(void)
     add_point_cloud(frame);
   for (auto line : lines_)
     add_line(line);
-  visualizer_->spin();
-  visualizer_->close();
+
+  while (!pangolin::ShouldQuit())
+  {
+    // Clear screen and activate view to render into
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    (*d_cam_)->Activate(*s_cam_);
+
+    for (auto gl_cloud : gl_clouds_)
+      gl_cloud->draw();
+
+    // Swap frames and Process Events
+    pangolin::FinishFrame();
+  }
+  pangolin::DestroyWindow("Main");
 }
 
 void PointCloudViewer::intialize_visualizer_(void)
 {
-  visualizer_ = boost::make_shared<pcl::visualization::PCLVisualizer>("PointCloudViewer");
-  visualizer_->setBackgroundColor(0, 0, 0);
-  visualizer_->addCoordinateSystem(1.0);
-  visualizer_->initCameraParameters();
+  pangolin::CreateWindowAndBind("Main", 640, 480);
+  glEnable(GL_DEPTH_TEST);
+
+  // Define Projection and initial ModelView matrix
+  s_cam_ = std::make_shared<pangolin::OpenGlRenderState>(
+      pangolin::ProjectionMatrix(640, 480, 420, 420, 320, 240, 0.2, 100),
+      pangolin::ModelViewLookAt(-2, 2, -2, 0, 0, 0, pangolin::AxisY));
+
+  // Create Interactive View in window
+  handler_ = std::make_shared<pangolin::Handler3D>(*s_cam_);
+  d_cam_ = std::make_shared<pangolin::View *>(
+      &pangolin::CreateDisplay()
+           .SetBounds(0.0, 1.0, 0.0, 1.0, -640.0f / 480.0f)
+           .SetHandler(handler_.get()));
 }
 
 void PointCloudViewer::add_line(const std::tuple<pcl::PointXYZ, pcl::PointXYZ> &line)
 {
-  auto id = unique_id();
-  visualizer_->addLine<pcl::PointXYZ>(std::get<0>(line), std::get<1>(line), id);
+  // visualizer_->addLine<pcl::PointXYZ>(std::get<0>(line), std::get<1>(line), id);
 }
 
 void PointCloudViewer::add_point_cloud(const std::shared_ptr<DepthFrame> &frame)
 {
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-  std::string id = pointer_to_string_id(frame.get());
   frame->transformed_point_cloud(cloud);
-  // cloud = frame->point_cloud(); // overwrite with original
-  visualizer_->addPointCloud<pcl::PointXYZ>(cloud, id);
-  visualizer_->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, id);
-  set_unique_color_(id);
+
+  auto gl_cloud = std::make_shared<GlCloud>(cloud);
+  float r, g, b;
+  get_unique_color_(r, g, b);
+  gl_cloud->set_color(r, g, b);
+  gl_clouds_.emplace_back(gl_cloud);
 
   // pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>());
   // frame->transformed_normals(normals);
@@ -53,35 +77,15 @@ void PointCloudViewer::add_normals(const pcl::PointCloud<pcl::PointXYZ>::Ptr &cl
 {
   for (size_t i = 0; i < cloud->points.size(); ++i)
   {
-    auto id = unique_id();
     pcl::PointXYZ normal_vertex;
     normal_vertex.getVector3fMap() = cloud->points[i].getVector3fMap() + normals->points[i].getNormalVector3fMap();
-    visualizer_->addLine<pcl::PointXYZ>(cloud->points[i], normal_vertex, id);
+    // visualizer_->addLine<pcl::PointXYZ>(cloud->points[i], normal_vertex, id);
   }
 }
 
-std::string PointCloudViewer::pointer_to_string_id(const void *ptr)
+void PointCloudViewer::get_unique_color_(float &r, float &g, float& b)
 {
-  std::stringstream stream;
-  stream << "0x"
-         << std::setfill('0') << std::setw(sizeof(void *) * 2)
-         << std::hex << ptr;
-  return stream.str();
-}
-
-std::string PointCloudViewer::unique_id(void)
-{
-  std::stringstream stream;
-  stream << "0x"
-         << std::setfill('0') << std::setw(sizeof(unsigned long int) * 2)
-         << std::hex << std::rand();
-  return stream.str();
-}
-
-void PointCloudViewer::set_unique_color_(const std::string &id)
-{
-  double r = (std::rand() % (100 + 1)) / 100.0;
-  double g = (std::rand() % (100 + 1)) / 100.0;
-  double b = (std::rand() % (100 + 1)) / 100.0;
-  visualizer_->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, id, 0);
+  r = std::rand() / float(RAND_MAX);
+  g = std::rand() / float(RAND_MAX);
+  b = std::rand() / float(RAND_MAX);
 }
