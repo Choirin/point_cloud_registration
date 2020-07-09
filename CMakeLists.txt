@@ -16,7 +16,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2 -Werror")
 add_compile_definitions(PUBLIC _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM=1)
 
 # workaround for vtk cmake setup issues on Mac
-include_directories(SYSTEM "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1")
+# include_directories(SYSTEM "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1")
 
 find_package(gflags REQUIRED)
 find_package(Eigen3 REQUIRED)
