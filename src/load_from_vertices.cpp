@@ -18,10 +18,10 @@
 namespace fs = std::experimental::filesystem;
 
 DEFINE_string(path_to_pngs,
-              "/Users/kohei/data/gx/png",
+              "/Users/kohei/Downloads/dataset_20200708/depth_image_",
               "png stored directory path");
 DEFINE_string(path_to_vertices,
-              "/Users/kohei/data/gx/20200316_123456_269f674abeadbdcc1e2ae7e4792877ee/feature_map/vertices",
+              "/Users/kohei/Downloads/dataset_20200708/maps/20200706_134124_492b677385c014401c460954eb005b29/feature_map/vertices",
               "png stored directory path");
 DEFINE_double(timestamp_diff,
               0.05,
@@ -70,7 +70,7 @@ void get_keyframe_to_depth_transformation(Eigen::Matrix4d &transform)
   Eigen::AngleAxisd yawAngle(DEG2RAD(-90), Eigen::Vector3d::UnitZ());
   Eigen::Quaterniond q = rollAngle * pitchAngle * yawAngle;
   transform.block<3, 3>(0, 0) = q.toRotationMatrix();
-  transform.block<3, 1>(0, 3) = Eigen::Vector3d(0, 0, 0);
+  transform.block<3, 1>(0, 3) = Eigen::Vector3d(0.0, 0.0, 0.2);
 }
 
 void add_noises(const std::vector<std::shared_ptr<DepthFrame>> &frames, double mu = 0.0, double sigma = 0.2)
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
   double last_timestamp = 0;
   for (auto file_path : file_paths)
   {
-    auto timestamp = std::stod(file_path.stem());
+    auto timestamp = std::stod(file_path.stem()) / 1.e9;
 #ifndef LOAD_ONLY_FIRST_FRAME
     if (timestamp - last_timestamp < 1.0)
       continue;
@@ -136,7 +136,8 @@ int main(int argc, char *argv[])
       Eigen::Matrix4d pose = Eigen::Matrix4d::Identity();
       Eigen::Matrix3d R = closest_vertex->rotation.toRotationMatrix();
       pose.block<3, 3>(0, 0) = R * tf_kf_depth.block<3, 3>(0, 0);
-      pose.block<3, 1>(0, 3) = closest_vertex->translation * 0.8565155709424058;
+      pose.block<3, 1>(0, 3) = pose.block<3, 3>(0, 0) * tf_kf_depth.block<3, 1>(0, 3) +
+          closest_vertex->translation * 0.8565155709424058;
 
       std::shared_ptr<DepthFrame> frame =
           std::make_shared<DepthFrame>(closest_vertex->timestamp, cloud, pose);
