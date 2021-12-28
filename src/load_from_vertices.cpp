@@ -63,7 +63,6 @@ size_t get_vertices_files(const fs::path &directory, std::vector<fs::path> &file
 
 void get_keyframe_to_depth_transformation(Eigen::Matrix4d &transform)
 {
-  // <node pkg="tf2_ros" type="static_transform_publisher" name="xvisio_base_footprint" args="0 0 0 1.570796327 0 1.43 imu_footprint depth" />
   transform = Eigen::Matrix4d::Identity();
   Eigen::AngleAxisd rollAngle(DEG2RAD(0), Eigen::Vector3d::UnitX());
   Eigen::AngleAxisd pitchAngle(DEG2RAD(120), Eigen::Vector3d::UnitY());
